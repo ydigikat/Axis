@@ -1,0 +1,99 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "JLink Flash",
+			"command": "${env:STM32CUBECLT_PATH}/STM32CubeProgrammer/bin/STM32_Programmer_CLI",
+			"windows": {
+				"command": "${env:STM32CUBECLT_PATH}/STM32CubeProgrammer/bin/STM32_Programmer_CLI.exe"
+			},
+			"args": [
+				"-c", "port=JLink", "reset=SWrst",
+				"-w", "${workspaceFolder}/build/${command:cmake.activeBuildPresetName}/build/source/app.elf",
+				"-g"
+			],
+			"dependsOn": "CMake: build",
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": false
+			}
+		},
+		{
+			"type": "shell",
+			"label": "STLink-Flash",
+			"command": "${env:STM32CUBECLT_PATH}/STM32CubeProgrammer/bin/STM32_Programmer_CLI",
+			"windows": {
+				"command": "${env:STM32CUBECLT_PATH}/STM32CubeProgrammer/bin/STM32_Programmer_CLI.exe"
+			},
+			"args": [
+				"-c",
+				"port=SWD",
+				"mode=UR",
+				"reset=SWrst",
+				"-w",
+				"${workspaceFolder}/build/${command:cmake.activeBuildPresetName}/build/source/app.elf",
+				"-g"
+			],
+			"dependsOn": "CMake: build",
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": false
+			}
+		},
+		{
+			"type": "cmake",
+			"label": "CMake: clean rebuild",
+			"command": "cleanRebuild",
+			"targets": ["all"],
+			"preset": "${command:cmake.activeBuildPresetName}",
+			"group": "build",
+			"problemMatcher": ["$gcc"],
+			"detail": "CMake template clean rebuild task",
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"type": "cmake",
+			"label": "CMake: configure",
+			"command": "configure",
+			"preset": "${command:cmake.activeConfigurePresetName}",
+			"problemMatcher": ["$gcc"],
+			"detail": "CMake template configure task",
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"type": "cmake",
+			"label": "CMake: build",
+			"command": "build",
+			"targets": ["all"],
+			"preset": "${command:cmake.activeBuildPresetName}",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": ["$gcc"],
+			"detail": "CMake template build task",
+			"presentation": {
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": true
+			}
+		}
+	]
+}

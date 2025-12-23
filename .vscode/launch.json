@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {      
+      "debuggerArgs": ["-ex", "skip function USART1_IRQHandler"],
+      "cwd": "${workspaceFolder}",
+      "executable": "build/debug/build/source/app.elf",
+      "name": "JLink-Debug",
+      "request": "launch",
+      "preLaunchTask": "JLink Flash",
+      "type": "cortex-debug",
+      "showDevDebugOutput": "raw",
+      "servertype": "jlink",
+      "serverArgs": ["-speed","4000"],
+      "device":"STM32F411CE",
+      "svdPath": "${env:STM32CUBECLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F411.svd",          
+      "armToolchainPath": "${env:STM32CUBECLT_PATH}/GNU-tools-for-STM32/bin/",        
+      "interface": "swd",
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+          {
+            "label": "",
+            "port": 0,
+            "type": "console"
+          }
+        ]
+      },
+      "linux": {
+        "serverpath": "/opt/SEGGER/JLink/JLinkGDBServer"
+      },
+      "windows": {
+        "serverpath": "C:/Program Files/SEGGER/JLink_V812F/JLinkGDBServerCL.exe"
+      }
+    },
+    {
+      "cwd": "${workspaceFolder}",
+      "executable": "build/debug/build/source/app.elf",
+      "name": "STLink-Debug",
+      "request": "launch",
+      "type": "cortex-debug",
+      "debuggerArgs": ["-ex", "skip function USART1_IRQHandler"],
+      "preLaunchTask": "STLink Flash",
+      "runToEntryPoint": "main",
+      "showDevDebugOutput": "none",
+      "servertype": "stlink",
+      "svdPath": "${env:STM32CUBECLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F411.svd",
+      "liveWatch": {
+        "enabled": true,
+        "refreshRate": 500
+      },
+      "linux": {
+        "gdbPath": "${env:STM32CUBECLT_PATH}/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",
+        "serverpath": "${env:STM32CUBECLT_PATH}/STLink-gdb-server/bin/ST-LINK_gdbserver",
+        "stm32cubeprogrammer": "${env:STM32CUBECLT_PATH}/STM32CubeProgrammer/bin"
+      },
+      "windows": {
+        "gdbPath": "${env:STM32CUBECLT_PATH}/GNU-tools-for-STM32/bin/arm-none-eabi-gdb.exe",
+        "serverpath": "${env:STM32CUBECLT_PATH}/STLink-gdb-server/bin/ST-LINK_gdbserver.exe",
+        "stm32cubeprogrammer": "${env:STM32CUBECLT_PATH}/STM32CubeProgrammer/bin"
+      }
+    }
+  ]
+}
