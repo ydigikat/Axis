@@ -62,10 +62,12 @@ endif()
 # ------------------------------------------------------------------------------
 list(APPEND SRCS_BSP
 
+  # The main init file
+  ${BSP_DIR}/init.c  
+
   # Shared config and runtime support code
   ${BSP_DIR}/shared/system_stm32f4xx.c
-  ${BSP_DIR}/shared/startup_stm32f411xe.s
-  ${BSP_DIR}/shared/init.c  
+  ${BSP_DIR}/shared/startup_stm32f411xe.s  
   ${BSP_DIR}/shared/syscalls.c
   ${BSP_DIR}/shared/sysmem.c
    
@@ -86,6 +88,7 @@ list(APPEND SRCS_BSP
 )
 
 list(APPEND INCL_BSP 
+ ${BSP_DIR}
  ${BSP_DIR}/shared    
  ${BSP_DIR}/drivers/STM32F4xx_HAL_Driver/Inc
  ${BSP_DIR}/drivers/CMSIS/Include

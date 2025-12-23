@@ -1,17 +1,13 @@
-/*
-  ------------------------------------------------------------------------------   
-   Frugi
-  ------------------------------------------------------------------------------
+/*  
    MIT License
    Copyright (c) 2025 Jason Wilden
 
    Permission to use, copy, modify, and/or distribute this code for any purpose
    with or without fee is hereby granted, provided the above copyright notice and
    this permission notice appear in all copies.
-  ------------------------------------------------------------------------------
 */
-#ifndef __PINS_H__
-#define __PINS_H__
+#ifndef __BOARD_H__
+#define __BOARD_H__
 
 #include "stm32f4xx.h"
 #include "stm32f4xx_ll_gpio.h"
