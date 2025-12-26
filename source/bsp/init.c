@@ -7,102 +7,205 @@
    this permission notice appear in all copies.
 */
 #include "trace.h"
+#include "stm32f4xx_ll_spi.h"
+#include "stm32f4xx_ll_dma.h"
 
 /* This will include the header for specific board we're using */
-#include "board.h"    
-
-/* Boards should provide a specific override of this function */
-__attribute__((weak)) bool board_init(void)
-{
-  return false;
-}
+#include "board.h"
 
 /**
  * clock_init
  * \brief initialises the STM32F4xx clock tree
- * \note we use the maximum 100MHz for sythesisers
+ * \note we use the maximum 100MHz for sythesisers since power usage
+ *       is not a concern.
  */
-__attribute__((weak)) void clock_init()
+static void clock_init()
 {
   /* Use the external high-speed xtal */
-  LL_RCC_HSE_Enable(); 
+  LL_RCC_HSE_Enable();
   while (!LL_RCC_HSE_IsReady())
     ;
 
   /* Power settings */
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);         
-  LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1); 
-  LL_FLASH_SetLatency(LL_FLASH_LATENCY_3);                   
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+  LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+  LL_FLASH_SetLatency(LL_FLASH_LATENCY_3);
 
   /* Configure the PLL */
   LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE, PLL_M, PLL_N, PLL_R);
-  LL_RCC_PLL_Enable(); 
+  LL_RCC_PLL_Enable();
   while (!LL_RCC_PLL_IsReady())
     ;
 
-  /* Clock source is the PLL */  
-  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL); 
+  /* Clock source is the PLL */
+  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
   while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL)
   {
-  }; 
+  };
 
   /* Scale the bus clock signals - APB1 runs at half speed */
-  LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1); 
-  LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2); 
-  LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);   
+  LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+  LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2);
+  LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
 
   /* Tell the system our speed */
-  SystemCoreClock = FREQ;                     
+  SystemCoreClock = FREQ;
 
   /* Enable the ART flash cache subsystem */
-  LL_FLASH_EnablePrefetch();  
-  LL_FLASH_EnableInstCache(); 
+  LL_FLASH_EnablePrefetch();
+  LL_FLASH_EnableInstCache();
 }
 
 /**
  * \brief Enable the floating point unit (FPU)
  */
-__attribute__((weak)) void fpu_init()
+static void fpu_init()
 {
   /* Enable */
-  SCB->CPACR |= ((3UL << 10 * 2) | (3UL << 11 * 2));  
+  SCB->CPACR |= ((3UL << 10 * 2) | (3UL << 11 * 2));
 
   /* Subnormals as zeroes */
   __set_FPSCR(__get_FPSCR() | (1 << 24));
-  __ISB(); 
-  __DSB(); 
+  __ISB();
+  __DSB();
+}
+
+/**
+ * \brief Initialise the I2S peripheral and associated pins
+ * \note This only partially initialises the peripheral and
+ *       does not start it, this is done later by the audio
+ *       start call.
+ * \return true if success, false otherwise
+ */
+static bool i2s_init()
+{
+  /* Pin configuration, output, low frequency, alternate function (peripheral mode) */
+  LL_GPIO_InitTypeDef io =
+      {
+          .Speed = LL_GPIO_SPEED_FREQ_LOW,
+          .Pull = LL_GPIO_PULL_DOWN,
+          .Mode = LL_GPIO_MODE_ALTERNATE,
+          .Alternate = I2S_AF,
+      };
+
+  /* Serial Clock (SCK, aka BCLK) - the bit clock */
+  io.Pin = I2S_SCK_PIN;
+  if (LL_GPIO_Init(I2S_SCK_PORT, &io) != SUCCESS)
+  {
+    return false;
+  }
+
+  /* Serial Data Out (SDO, aka SD) - the audio data */
+  io.Pin = I2S_SDO_PIN;
+  if (LL_GPIO_Init(I2S_SDO_PORT, &io) != SUCCESS)
+  {
+    return false;
+  }
+
+  /* Word Select (WS, aka LRCK) - indicates left/right channel */
+  io.Pin = I2S_WS_PIN;
+  if (LL_GPIO_Init(I2S_WS_PORT, &io) != SUCCESS)
+  {
+    return false;
+  }
+
+#ifdef MCLK_PIN
+  /* Some codecs require a master clock signal */
+  io.Pin = MCLK_PIN;
+  if (LL_GPIO_Init(MCLK_PORT, &io) != SUCCESS)
+  {
+    return false;
+  }
+#endif
+
+/* 
+  Partially configure the I2S peripheral, the remaining configuration is done by
+  the audio_start call.
+*/
+if (LL_I2S_Init(I2S, &(LL_I2S_InitTypeDef){  
+  .ClockPolarity = LL_I2S_POLARITY_LOW,
+  .DataFormat = LL_I2S_DATAFORMAT_32B,
+  .MCLKOutput = LL_I2S_MCLK_OUTPUT_DISABLE,
+  .Mode = LL_I2S_MODE_MASTER_TX,
+  .Standard = LL_I2S_STANDARD_PHILIPS}) != SUCCESS)
+  {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * \brief initialises the DMA transfer for the I2S peripheral
+ * \note this is only partial configuration and the DMA is not started,
+ *       we complete these operations in the audio_start call.
+ * \return true if success, false otherwise
+ */
+ static bool dma_init()
+{
+  if (LL_DMA_Init(DMA, DMA_STREAM, &(LL_DMA_InitTypeDef){
+         .Channel = DMA_CHANNEL,                               
+        .Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH,       
+        .PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT,   
+        .MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT,     
+        .PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_HALFWORD, 
+        .MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_HALFWORD, 
+        .Mode = LL_DMA_MODE_CIRCULAR,                         
+        .Priority = LL_DMA_PRIORITY_HIGH,                     
+        .FIFOMode = LL_DMA_FIFOMODE_DISABLE
+  }) != SUCCESS)
+  {
+    return false;
+  }
+
+  /* Enable interrupts at half-transfer (HT) and transfer-complete (TC) */
+  LL_DMA_EnableIT_HT(DMA, DMA_STREAM); 
+  LL_DMA_EnableIT_TC(DMA, DMA_STREAM); 
+
+  NVIC_SetPriority(DMA_IRQN, 10);
+  NVIC_EnableIRQ(DMA_IRQN);      
+
+  /* Connnect DMA to I2S peripheral */
+  LL_SPI_EnableDMAReq_TX(I2S);
+
+  return true;
 }
 
 /**
  * init
  * \brief This initialises the board (hardware)
  * \details There is a specific order to the init sequence:
- * 
+ *
  *          1 - Shared basics:   clock tree, flash and FPU
  *          2 - Board specific:  gpio pins, peripheral clocks etc
  *          3 - Shared hardware: peripherals I2S, UART etc
- *          
+ *
  *          The board specifics are sandwiched between 1 and 3 because it is often
  *          responsible for defining the pins and peripheral clocks, busses etc needed
- *          by the subsequent shared hardware in 3.  
- * 
+ *          by the subsequent shared hardware in 3.
+ *
  * \note    The init functions are all defined as weak which means they
- *          can be overriden in the board specific file should that be needed.  
+ *          can be overriden in the board specific file should that be needed.
  */
 bool init(void)
-{  
-  clock_init();     /* Initialise clocks  */  
-  fpu_init();       /* Initialise the FPU */
+{
+  clock_init(); /* Initialise clocks  */
+  fpu_init();   /* Initialise the FPU */
 
-  if(!board_init()) /* Board specific initialisation */
+  if (!board_init()) /* Board specific initialisation */
   {
     return false;
   }
-  
-  /* Remaining shared initialisation goes here */
 
-  return true; 
+  /* Remaining shared initialisation goes here */
+  i2s_init();
+  dma_init();
+
+  return true;
 }
+
+
+
 
 
 /**
@@ -110,11 +213,11 @@ bool init(void)
  * \note If the processor hits a serious error, this gets called.
  *       It logs the error and hangs the system (better than random behavior).
  */
-__attribute__((weak))  void HardFault_Handler(void)
+void HardFault_Handler(void)
 {
-  RTT_LOG("HardFault_Handler\n");
+  RTT_LOG("HALTED: Hard fault.\n");
   while (1)
-    ; 
+    ;
 }
 
 /**
@@ -122,11 +225,11 @@ __attribute__((weak))  void HardFault_Handler(void)
  * \note Called on memory protection errors.
  *       Generally means trying to access memory it shouldn't.
  */
-__attribute__((weak)) void MemManage_Handler(void)
+void MemManage_Handler(void)
 {
-  RTT_LOG("MemManage_Handler\n");
+  RTT_LOG("HALTED: Memory fault.\n");
   while (1)
-    ; 
+    ;
 }
 
 /**
@@ -134,22 +237,22 @@ __attribute__((weak)) void MemManage_Handler(void)
  * \note Called on errors during memory transfers.
  *       Typically means trying to access hardware that isn't there.
  */
-__attribute__((weak)) void BusFault_Handler(void)
+void BusFault_Handler(void)
 {
-  RTT_LOG("BusFault_Handler\n");
+  RTT_LOG("HALTED: Bus fault.\n");
   while (1)
-    ; 
+    ;
 }
 
 /**
  * \brief Usage fault exception handler
  * \note Called on various CPU usage errors like trying to execute invalid instructions.
  */
-__attribute__((weak)) void UsageFault_Handler(void)
+void UsageFault_Handler(void)
 {
-  RTT_LOG("UsageFault_Handler\n");
+  RTT_LOG("HALTED: Usage fault.\n");
   while (1)
-    ; 
+    ;
 }
 
 /**
@@ -157,9 +260,9 @@ __attribute__((weak)) void UsageFault_Handler(void)
  * \note This interrupt that can't be disabled.
  *       If this triggers, something bad happened with the hardware.
  */
-__attribute__((weak)) void NMI_Handler(void)
+void NMI_Handler(void)
 {
-  RTT_LOG("NMI_Handler\n");
+  RTT_LOG("HALTED: Non maskable interrupt.\n");
   while (1)
-    ; 
+    ;
 }

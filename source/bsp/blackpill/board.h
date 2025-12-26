@@ -27,24 +27,6 @@
 /* Read Button, this is on bit 1 of the port */
 #define READ_USR_BTN() (LL_GPIO_ReadInputPort(GPIOA) & LL_GPIO_PIN_0)
 
-/* Logic check pins */
-#define D0_SET() (GPIOB->BSRR |= GPIO_BSRR_BS9)  
-#define D0_CLEAR() (GPIOB->BSRR |= GPIO_BSRR_BR9) 
-#define D1_SET() (GPIOB->BSRR |= GPIO_BSRR_BS8)  
-#define D1_CLEAR() (GPIOB->BSRR |= GPIO_BSRR_BR8) 
-#define D2_SET() (GPIOB->BSRR |= GPIO_BSRR_BS7)  
-#define D2_CLEAR() (GPIOB->BSRR |= GPIO_BSRR_BR7) 
-#define D3_SET() (GPIOB->BSRR |= GPIO_BSRR_BS6)  
-#define D3_CLEAR() (GPIOB->BSRR |= GPIO_BSRR_BR6) 
-#define D4_SET() (GPIOB->BSRR |= GPIO_BSRR_BS5)  
-#define D4_CLEAR() (GPIOB->BSRR |= GPIO_BSRR_BR5) 
-#define D5_SET() (GPIOB->BSRR |= GPIO_BSRR_BS4)  
-#define D5_CLEAR() (GPIOB->BSRR |= GPIO_BSRR_BR4) 
-#define D6_SET() (GPIOB->BSRR |= GPIO_BSRR_BS3)  
-#define D6_CLEAR() (GPIOB->BSRR |= GPIO_BSRR_BR3) 
-#define D7_SET() (GPIOB->BSRR |= GPIO_BSRR_BS2)  
-#define D7_CLEAR() (GPIOB->BSRR |= GPIO_BSRR_BR2) 
-
 /* SYS CLOCK */
 #define PLL_M (LL_RCC_PLLM_DIV_12)
 #define PLL_N (96)
@@ -60,11 +42,10 @@
 #define I2S_SDO_PORT (GPIOB)
 #define I2S_SCK_PIN (LL_GPIO_PIN_10)
 #define I2S_SCK_PORT (GPIOB)
-#define I2S_MCK_PIN (LL_GPIO_PIN_3)
-#define I2S_MCK_PORT (GPIOA)
-
-/* I2S PLL divider, we want divided down to 1MHz */
 #define I2S_PLL_M (LL_RCC_PLLI2SM_DIV_25)  
+
+#define MCLK_PIN (LL_GPIO_PIN_3)
+#define MCLK_PORT (GPIOA)
 
 /* DMA (I2S)*/
 #define DMA (DMA1)
@@ -78,14 +59,8 @@
 #define DMA_IRQN (DMA1_Stream4_IRQn)
 #define DMA_IRQ_HANDLER DMA1_Stream4_IRQHandler
 
-/* UART RX for MIDI */
-#define UART (USART1)
-#define UART_AF (LL_GPIO_AF_7)
-#define UART_RX_PIN (LL_GPIO_PIN_10)
-#define UART_RX_PORT (GPIOA)
-
-#define UART_IRQN (USART1_IRQn)
-#define UART_IRQ_HANDLER USART1_IRQHandler
+/* API */
+bool board_init(void);
 
 
 #endif /* __BOARD_H__ */

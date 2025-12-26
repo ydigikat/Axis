@@ -12,6 +12,7 @@
 
 #include "trace.h"
 #include "ui.h"
+#include "dae.h"
 
 
 /* Import the hardware initialisation function */
@@ -24,6 +25,13 @@ int main(void)
     if (!ui_start(tskIDLE_PRIORITY + 1))
     {
         RTT_LOG("UI task failed to start\n");
+        while (1)
+            ;
+    }
+
+    if(!dae_start(tskIDLE_PRIORITY + 5))
+    {
+        RTT_LOG("DAE task failed to start\n");
         while (1)
             ;
     }

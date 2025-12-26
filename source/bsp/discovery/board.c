@@ -9,6 +9,8 @@
 
 #include "board.h"
 
+extern void cs43l22_init(void);
+
 bool board_init()
 { 
   /* Enable the peripheral clocks */ 
@@ -35,6 +37,9 @@ bool board_init()
   /* USR button */
   LL_GPIO_SetPinPull(GPIOA, LL_GPIO_PIN_0, LL_GPIO_PULL_UP);
   LL_GPIO_SetPinMode(GPIOA, LL_GPIO_PIN_0, LL_GPIO_MODE_INPUT);
+
+  /* Start the Discovery's onboard codec */
+  cs43l22_init();
 
   return true;
 }

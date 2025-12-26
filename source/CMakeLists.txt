@@ -29,10 +29,13 @@ set(BSP_DIR ${SRC_DIR}/bsp)
 set(SRCS_APP 
   ${SRC_DIR}/main.c    
   ${SRC_DIR}/ui/ui.c
+  ${SRC_DIR}/dae/dae.c
 )
 
-set(INCL_APP ${SRC_DIR}/ui)
-set(DEFS_APP $<$<CONFIG:DEBUG>: DEBUG>)
+set(INCL_APP ${SRC_DIR}/ui ${SRC_DIR}/dae)
+
+set(DEFS_APP $<$<CONFIG:DEBUG>: DEBUG> )
+
 
 # ------------------------------------------------------------------------------
 # These build items are specific to the MCU and physical board pins/layout
@@ -40,16 +43,33 @@ set(DEFS_APP $<$<CONFIG:DEBUG>: DEBUG>)
 message(STATUS "Configuring board support for '${BOARD}'")
 
 if(BOARD STREQUAL blackpill)     
-  SET(SRCS_BSP ${BSP_DIR}/${BOARD}/board.c)  
+  # Blackpill generic board, depending on your codec you
+  # may need the MCLK signal enabled.  The UDA1334A that 
+  # I use does not require it.
+  SET(SRCS_BSP ${BSP_DIR}/${BOARD}/board.c
+  )  
   SET(INCL_BSP ${BSP_DIR}/${BOARD})
   SET(LINKER_SCRIPT ${BSP_DIR}/${BOARD}/STM32F411CEUX_FLASH.ld)    
-  SET(DEFS_BSP HSE_VALUE=25000000 STM32F411xE)
+  SET(DEFS_BSP 
+      HSE_VALUE=25000000 
+      STM32F411xE
+      # DAE_USES_MCLK 
+      )
 
 elseif(BOARD STREQUAL discovery)  
-  SET(SRCS_BSP ${BSP_DIR}/${BOARD}/board.c)
+  # STM32F411VET Discovery board, this has an onboard codec - cs43l22 so
+  # an additional driver file is required, this codec also requires the
+  # MCLK signal to be enabled.
+  SET(SRCS_BSP ${BSP_DIR}/${BOARD}/board.c
+               ${BSP_DIR}/${BOARD}/cs43l22.c
+  )
   SET(INCL_BSP ${BSP_DIR}/${BOARD})
   set(LINKER_SCRIPT ${BSP_DIR}/${BOARD}/STM32F411VEHX_FLASH.ld)    
-  SET(DEFS_BSP HSE_VALUE=8000000 STM32F411xE)
+  SET(DEFS_BSP 
+      HSE_VALUE=8000000 
+      STM32F411xE 
+      DAE_USES_MCLK
+  )
 
 else()
   message(FATAL_ERROR "No configuration found for board: '${BOARD}'.")  
@@ -64,6 +84,8 @@ list(APPEND SRCS_BSP
 
   # The main init file
   ${BSP_DIR}/init.c  
+
+  ${BSP_DIR}/audio.c
 
   # Shared config and runtime support code
   ${BSP_DIR}/shared/system_stm32f4xx.c

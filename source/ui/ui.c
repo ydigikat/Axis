@@ -17,14 +17,11 @@
 
 
 /**
-* FreeRTOS task that handles the user interface.
-* Currently implements a simple LED blink pattern as Frugi has no UI.
-* - LED on for 50ms
-* - LED off for 950ms
-* This creates a 1 second blink cycle with a short pulse.
-*
-* @param pvParameters Task parameters (unused)
-*/
+ * ui_tase
+ * \brief the user interface thread
+ * \param params unused.
+ * \note this task never returns
+ */
 static void ui_task(void *pvParameters)
 {
   while(1)
@@ -36,16 +33,12 @@ static void ui_task(void *pvParameters)
   }
 }
 
-
 /**
-* Initializes and starts the UI task.
-* Creates a FreeRTOS task for handling user interface operations.
-*
-* @param priority Priority level for the UI task
-* @return true if task creation succeeded, false otherwise
-* 
-* Stack size: 4x minimum stack size defined by FreeRTOS config
-*/
+ * ui_start
+ * \brief creates the UI thread.
+ * \param priority the priority level for the task
+ * \return true if created, false otherwise
+ */
 bool ui_start(UBaseType_t priority)
 {
   if (xTaskCreate(ui_task, "UI", configMINIMAL_STACK_SIZE * 4, NULL, priority, NULL) != pdPASS)
