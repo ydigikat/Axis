@@ -15,7 +15,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "dae.h"
+#include "midi.h"
 
 #include "trace.h"
 
@@ -28,7 +28,8 @@ void dae_ready_for_audio(uint8_t buffer_idx);
 
 
 /* Callback functions */
-void dae_prepare_for_play(float sample_rate, size_t block_size);
-void dae_process_block(float *left, float *right, size_t block_size);
+void dae_prepare_for_play(float sample_rate, size_t block_size, uint8_t *channel);
+void dae_process_block(float *left, float *right);
+void dae_handle_midi(struct midi_msg *msg);
 
 #endif /* DAE_H */

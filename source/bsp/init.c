@@ -9,6 +9,7 @@
 #include "trace.h"
 #include "stm32f4xx_ll_spi.h"
 #include "stm32f4xx_ll_dma.h"
+#include "stm32f4xx_ll_usart.h"
 
 /* This will include the header for specific board we're using */
 #include "board.h"
@@ -172,6 +173,58 @@ if (LL_I2S_Init(I2S, &(LL_I2S_InitTypeDef){
 }
 
 /**
+ * \brief Configure the UART for MIDI input
+ * \note  MIDI runs at 31250 baud, 8N1, RX only since the synth does not
+ *        ever send MIDI.
+ * 1\return true if successful, false if initialisation failed.
+ */
+static bool uart_init()
+{
+  
+  LL_GPIO_InitTypeDef gpio =
+      {
+          .Mode = LL_GPIO_MODE_ALTERNATE,   
+          .Alternate = UART_AF,             
+          .Pin = UART_RX_PIN,               
+          .Speed = LL_GPIO_SPEED_FREQ_HIGH, 
+          .Pull = LL_GPIO_PULL_UP};         
+
+  if (LL_GPIO_Init(UART_RX_PORT, &gpio) != SUCCESS)
+  {
+    return false; 
+  }
+
+  /* USART config  31250, 8N1 RX only */
+  LL_USART_InitTypeDef usart =
+      {
+          .BaudRate = 31250,                           
+          .OverSampling = LL_USART_OVERSAMPLING_16,    
+          .DataWidth = LL_USART_DATAWIDTH_8B,          
+          .Parity = LL_USART_PARITY_NONE,              
+          .StopBits = LL_USART_STOPBITS_1,             
+          .TransferDirection = LL_USART_DIRECTION_RX}; 
+
+  if (LL_USART_Init(UART, &usart) != SUCCESS)
+  {
+    return false; 
+  }
+
+  /* Interrupt handling, this will signal arrival of MIDI data */
+  NVIC_EnableIRQ(UART_IRQN);      
+  NVIC_SetPriority(UART_IRQN, 6); 
+
+  LL_USART_EnableIT_RXNE(UART); 
+
+  /* Enable */
+  LL_USART_Enable(UART); 
+  while (!LL_USART_IsEnabled(UART))
+    ; 
+
+  return true;
+}
+
+
+/**
  * init
  * \brief This initialises the board (hardware)
  * \details There is a specific order to the init sequence:
@@ -200,6 +253,7 @@ bool init(void)
   /* Remaining shared initialisation goes here */
   i2s_init();
   dma_init();
+  uart_init();
 
   return true;
 }
@@ -326,6 +380,17 @@ void DMA_IRQ_HANDLER(void)
   }
 }
 
+/**
+ * UART Interrupt Handler
+ *
+ * This gets called whenever a MIDI byte arrives at the UART.
+ * It simply passes the data to the Digital Audio Engine for processing.
+ */
+void UART_IRQ_HANDLER(void)
+{
+  
+  dae_midi_received((uint8_t)UART->DR); // Send the received MIDI byte to the DAE
+}
 
 /**
  * \brief Hard fault exception handler

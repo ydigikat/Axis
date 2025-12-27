@@ -28,8 +28,11 @@ set(BSP_DIR ${SRC_DIR}/bsp)
 # ------------------------------------------------------------------------------
 set(SRCS_APP 
   ${SRC_DIR}/main.c    
+  
   ${SRC_DIR}/ui/ui.c
+
   ${SRC_DIR}/dae/dae.c
+  ${SRC_DIR}/dae/midi.c
 )
 
 set(INCL_APP ${SRC_DIR}/ui ${SRC_DIR}/dae)

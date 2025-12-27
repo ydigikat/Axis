@@ -59,6 +59,15 @@
 #define DMA_IRQN (DMA1_Stream4_IRQn)
 #define DMA_IRQ_HANDLER DMA1_Stream4_IRQHandler
 
+/* UART RX for MIDI */
+#define UART (USART1)
+#define UART_AF (LL_GPIO_AF_7)
+#define UART_RX_PIN (LL_GPIO_PIN_10)
+#define UART_RX_PORT (GPIOA)
+
+#define UART_IRQN (USART1_IRQn)
+#define UART_IRQ_HANDLER USART1_IRQHandler
+
 /* API */
 bool board_init(void);
 

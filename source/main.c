@@ -53,3 +53,38 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
     while (1)
         ;
 }
+
+/* Callbacks to connect DAE to audio generator */
+
+/**
+ * \brief called once by the DAE at start up
+ * \param the the sample rate 
+ * \param block_size the size of the blocks you need to generate
+ * \param midi_channel a pointer, you need to set this to 1-16 or OMNI to indicate the
+ *                     MIDI channel you are listening to.
+ */
+void dae_prepare_for_play(float sample_rate, size_t block_size, uint8_t *midi_channel)
+{
+  /* Call a matching function in your audio generator */
+}
+
+/**
+ * \brief a MIDI message needs to be handled.  These are always complete and valid messages.
+ * \midi_msg the MIDI message structure.
+ */
+void dae_handle_midi(struct midi_msg *msg)
+{  
+  /* Call a matching function in your audio generator */
+}
+
+/**
+ * \brief called every time a new audio block needs to be generated, the block size is the
+ *        value passed in the call dae_prepare_for_play()
+ * \param left the left channel (samples)
+ * \param right the right channel (samples)
+ */
+void dae_process_block(float *left, float *right)
+{ 
+  /* Call a matching function in your audio generator */
+}
+

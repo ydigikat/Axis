@@ -66,6 +66,17 @@
 #define DMA_IRQN (DMA1_Stream5_IRQn)       /* The interrupt number and interrupt handler function */   
 #define DMA_IRQ_HANDLER DMA1_Stream5_IRQHandler
 
+
+
+/* UART RX for MIDI */
+#define UART (USART2)
+#define UART_AF (LL_GPIO_AF_7)
+#define UART_RX_PIN (LL_GPIO_PIN_3)
+#define UART_RX_PORT (GPIOA)
+
+#define UART_IRQN (USART2_IRQn)
+#define UART_IRQ_HANDLER USART2_IRQHandler
+
 /* API */
 bool board_init(void);
 
