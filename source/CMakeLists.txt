@@ -85,8 +85,6 @@ list(APPEND SRCS_BSP
   # The main init file
   ${BSP_DIR}/init.c  
 
-  ${BSP_DIR}/audio.c
-
   # Shared config and runtime support code
   ${BSP_DIR}/shared/system_stm32f4xx.c
   ${BSP_DIR}/shared/startup_stm32f411xe.s  
