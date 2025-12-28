@@ -1,4 +1,4 @@
-/*
+b/*
    MIT License
    Copyright (c) 2025 Jason Wilden
 
@@ -227,7 +227,7 @@ void cs43l22_init(void)
   i2c_write(CS43L22_I2C_ADDR, 0x23, 0x00); /* HP-B: No attenuation */
   
   /* Set master volume */
-  cs43l22_set_volume(100); /* Assuming you've fixed the volume function */
+  cs43l22_set_volume(100); 
   
   /* Power on with all systems enabled */
   i2c_write(CS43L22_I2C_ADDR, CS43L22_REG_POWER_CTL1, 0x9E);
