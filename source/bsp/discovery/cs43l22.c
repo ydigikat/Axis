@@ -1,4 +1,4 @@
-b/*
+/*
    MIT License
    Copyright (c) 2025 Jason Wilden
 
