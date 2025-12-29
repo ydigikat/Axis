@@ -386,7 +386,7 @@ void DMA_IRQ_HANDLER(void)
  * It simply passes the data to the Digital Audio Engine for processing.
  */
 void UART_IRQ_HANDLER(void)
-{ 
+{   
   dae_midi_received((uint8_t)UART->DR); // Send the received MIDI byte to the DAE
 }
 

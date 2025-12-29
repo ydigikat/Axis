@@ -59,7 +59,7 @@ static void dae_task(void *pvParameters)
        messages are not time-stamped so MIDI slicing is not possible. */
     uint8_t byte;
     while (midi_buffer_read(&byte))
-    {
+    {      
       struct midi_msg *msg = midi_parse(&midi_in, byte);
       if (msg != NULL)
       {
@@ -143,6 +143,9 @@ void dae_midi_received(uint8_t byte)
   {
     return;
   }
+
+  // RTT_LOG("Storing byte %d\n",byte);
+
   /* Write the byte to the MIDI ring-buffer */
   midi_buffer_write(byte);  
 }

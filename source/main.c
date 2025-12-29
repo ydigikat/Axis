@@ -69,6 +69,8 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 void dae_prepare_for_play(float sample_rate, size_t block_size, uint8_t *midi_channel)
 {
   /* Call the relevant function in your audio generator */
+  RTT_LOG_FLOAT("Prepare for play: %f-%d, setting MIDI to OMNI\n",(double)sample_rate,block_size);
+  *midi_channel = MIDI_OMNI;
 }
 
 /**
@@ -78,6 +80,7 @@ void dae_prepare_for_play(float sample_rate, size_t block_size, uint8_t *midi_ch
 void dae_handle_midi(struct midi_msg *msg)
 {  
   /* Call the relevant function in your audio generator */
+  RTT_LOG("MIDI: %0x-%0x-%0x\n",msg->data[0],msg->data[1],msg->data[2]);
 }
 
 /**
@@ -85,9 +88,10 @@ void dae_handle_midi(struct midi_msg *msg)
  *        value passed in the call dae_prepare_for_play()
  * \param left the left channel (samples)
  * \param right the right channel (samples)
+ * \note comment this out entirely if you want the test tone from the DAE weak function to sound.
  */
 // void dae_process_block(float *left, float *right)
 // { 
-//   /* Call the relevant function in your audio generator */
+//    /* Call the relevant function in your audio generator */
 // }
 
