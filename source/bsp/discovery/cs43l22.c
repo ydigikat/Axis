@@ -198,8 +198,8 @@ void cs43l22_init(void)
   /* Clock configuration - auto detect, div by 2 */
   i2c_write(CS43L22_I2C_ADDR, CS43L22_REG_CLOCKING_CTL, 0x81);
   
-  /* I2S audio standard, 16-bit */
-  i2c_write(CS43L22_I2C_ADDR, CS43L22_REG_INTERFACE_CTL1, 0x04);
+  /* Philips I2S audio standard, 24-bit */
+  i2c_write(CS43L22_I2C_ADDR, CS43L22_REG_INTERFACE_CTL1, 0x05);
   
   /* Disable digital soft ramp and other DSP features */
   i2c_write(CS43L22_I2C_ADDR, 0x0A, 0x00);

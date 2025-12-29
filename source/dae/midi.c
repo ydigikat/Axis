@@ -1,14 +1,10 @@
 /*
-  ------------------------------------------------------------------------------   
-   Frugi
-  ------------------------------------------------------------------------------
    MIT License
    Copyright (c) 2025 Jason Wilden
 
    Permission to use, copy, modify, and/or distribute this code for any purpose
    with or without fee is hereby granted, provided the above copyright notice and
    this permission notice appear in all copies.
-  ------------------------------------------------------------------------------
 */
 #include "midi.h"
 
@@ -70,8 +66,6 @@ static void midi_reset_msg(struct midi_msg *msg)
  * \param byte MIDI byte to parse
  * \return MIDI message if a complete real-time message is parsed, NULL otherwise.
  * \note Real-time messages are single byte messages that can be sent at any time.
- * They are not part of the MIDI stream and can be sent between any other messages.
- * This function does not intefere with the state of any incomplete MIDI message.
  */
 static struct midi_msg *midi_parse_rt_msg(struct midi_port *midi_in, uint8_t byte)
 {
@@ -88,10 +82,12 @@ static struct midi_msg *midi_parse_rt_msg(struct midi_port *midi_in, uint8_t byt
 }
 
 /**
- * \brief parses a midi message incrementally from the passed in bytes
+ * \brief Accumulates a complete MIDI message from the bytes.
  * \param midi_in the MIDI port (state)
  * \param byte data byte
  * \return true if the message is complete and parsed.
+ * \note supports running status and realtime messages, sys-ex messages
+ *       are ignored (drained).  Channel can be 1-16 or OMNI.
  */
 static bool midi_parse_message(struct midi_port *midi_in, uint8_t byte)
 {
@@ -104,9 +100,11 @@ static bool midi_parse_message(struct midi_port *midi_in, uint8_t byte)
     midi_reset_msg(midi_in->msg);
   }
 
+  /* Set things up for running status */
   running_status = midi_in->running_status;
   msg = midi_in->msg;
 
+  /* We ignore (drain) sysex messages, this indicates the sys ex has ended */
   if (midi_in->sysex_active)
   {
     if (byte == MIDI_STATUS_SYS_EX_END)
@@ -121,12 +119,16 @@ static bool midi_parse_message(struct midi_port *midi_in, uint8_t byte)
     midi_in->running_status = byte;
     midi_in->third_byte_expected = false;
 
+    /* This is a sys-ex message, ignore it and start draining bytes until the end flag, there
+       is a potential problem here that the end flag might never be received so a timeout
+       is also used to deal with that. */
     if (byte == MIDI_STATUS_SYS_EX_START)
     {
       midi_in->sysex_active = true;
       return false;
     }
 
+    /* Single byte messages are just done in one! They do not relate to a specific channel */
     if (IS_SINGLE_BYTE_MSG(byte))
     {
       midi_in->msg->data[0] = byte;
@@ -137,12 +139,13 @@ static bool midi_parse_message(struct midi_port *midi_in, uint8_t byte)
     return false;
   }
 
-
+  /* Determine if this message is for us */
   if (midi_in->channel != MIDI_OMNI && (running_status & CHANNEL_MASK) != (midi_in->channel - 1))
   {
     return false;
   }
 
+  /* We're expeciting a third byte */
   if (midi_in->third_byte_expected)
   {
     midi_in->third_byte_expected = false;
@@ -156,13 +159,15 @@ static bool midi_parse_message(struct midi_port *midi_in, uint8_t byte)
     return false;
   }
 
+  /* Parse messages*/
   switch (running_status)
-  {
+  {    
   case MIDI_STATUS_NOTE_ON:
   case MIDI_STATUS_NOTE_OFF:
   case MIDI_STATUS_CONTROL_CHANGE:
   case MIDI_STATUS_PITCH_BEND:
   case MIDI_STATUS_POLY_PRESSURE:
+    /* These are all 3 byte channel messages, we've had 2 bytes so now we need the third */
     midi_in->third_byte_expected = true;
     msg->data[0] = running_status;
     msg->data[1] = byte;
@@ -171,6 +176,7 @@ static bool midi_parse_message(struct midi_port *midi_in, uint8_t byte)
 
   case MIDI_STATUS_PROGRAM_CHANGE:
   case MIDI_STATUS_CHANNEL_PRESSURE:
+    /* These are two byte messages, so we're done */
     midi_in->third_byte_expected = false;
     msg->data[0] = running_status;
     msg->data[1] = byte;

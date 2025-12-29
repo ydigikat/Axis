@@ -1,14 +1,10 @@
 /*
-  ------------------------------------------------------------------------------   
-   Frugi
-  ------------------------------------------------------------------------------
    MIT License
    Copyright (c) 2025 Jason Wilden
 
    Permission to use, copy, modify, and/or distribute this code for any purpose
    with or without fee is hereby granted, provided the above copyright notice and
    this permission notice appear in all copies.
-  ------------------------------------------------------------------------------
 */
 #ifndef __MIDI_H__
 #define __MIDI_H__

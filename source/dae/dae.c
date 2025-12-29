@@ -8,7 +8,7 @@
 */
 #include "dae.h"
 
-/* Configuration */
+/* Default configuration, these can be overriden in the CMakeLists.txt file */
 #ifndef DAE_SAMPLE_RATE
 #define DAE_SAMPLE_RATE (48000)
 #endif
@@ -67,7 +67,6 @@ static void dae_task(void *pvParameters)
       }
     }
 
-
     /* Call audio source to generate the audio block */
     dae_process_block(left_buffer, right_buffer);
 
@@ -109,7 +108,7 @@ bool dae_start(UBaseType_t priority)
  * dae_ready_for_audio
  * \brief called by the audio hardware interrupt when a new buffer of audio sample is required.
  * \param buffer_idx the buffer to refill (PING or PONG)
- * \note this is an interrupt handler so needs to specific handling for RTOS interrupts.
+ * \note This ISR wakes a sleeping task (context switch) so RTOS interrupt protection/handling is required.
  */
 void dae_ready_for_audio(uint8_t buffer_idx)
 {
@@ -133,9 +132,13 @@ void dae_ready_for_audio(uint8_t buffer_idx)
  * \brief called by the hardware when a MIDI byte is received.  The DAE adds these to the
  *        MIDI ring_buffer for processing at the start of the next audio block.
  * \param byte the data byte.
+ * \note  This ISR does not use RTOS or yield. The MIDI buffer is a single-producer (ISR), 
+ *        single-consumer (task) lock-free ring buffer where the ISR only updates the write index
+ *        and the task only updates the read index. All accesses are atomic,
+ *        so no RTOS or critical section protection is required.
  */
 void dae_midi_received(uint8_t byte)
-{
+{   
   if (byte == MIDI_STATUS_ACTIVE_SENSE)
   {
     return;

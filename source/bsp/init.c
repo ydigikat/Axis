@@ -363,8 +363,7 @@ void audio_start(int16_t audio_buffer[], size_t buf_len, uint32_t fsr)
  *
  * \note This gets called when the DMA has finished transferring a buffer and it can
  *       be refilled.  The DAE will be responsible for filling the buffer by implementing
- *       the refill_audio function.  We provide a weak version which generates a simple
- *       tone for testing the board.
+ *       the dae_ready_for_audio() function.
  */
 void DMA_IRQ_HANDLER(void)
 {
@@ -387,8 +386,7 @@ void DMA_IRQ_HANDLER(void)
  * It simply passes the data to the Digital Audio Engine for processing.
  */
 void UART_IRQ_HANDLER(void)
-{
-  
+{ 
   dae_midi_received((uint8_t)UART->DR); // Send the received MIDI byte to the DAE
 }
 
